@@ -3,7 +3,7 @@
 import sys
 import argparse
 
-def replaceLoop(content, oldt, newt, verbose):
+def replaceLoop(content, oldt, newt, verbose, printNL):
     replCnt = content.count(oldt)
     while replCnt > 0:
         if verbose:
@@ -11,11 +11,11 @@ def replaceLoop(content, oldt, newt, verbose):
         content = content.replace(oldt, newt)
         replCnt = content.count(oldt)
     if verbose:
-        print(replCnt, end='  ')
+        print(replCnt, end=printNL)
 
     return content
 
-def fixFileWhitespace(file_path, doCRLF, doWrite, doCollapseSpaces, nlPerParaIn, nlPerParaOut, verbose):
+def fixFileWhitespace(file_path, doCRLF, doWrite, doCollapseSpaces, nlPerParaIn, nlPerParaOut, verbose, printNL):
     '''Get rid of all whitespace issues in the given file, with modes for source code and text files.'''
     '''Can convert line endings to LF or CRLF. Can specify how to do paragraph endings.'''
 
@@ -29,7 +29,7 @@ def fixFileWhitespace(file_path, doCRLF, doWrite, doCollapseSpaces, nlPerParaIn,
             content.count(b'\r\n'), 'CRLF,',
             content.count(b'\r'), 'CR,',
             content.count(b'\n'), 'LF,',
-            content.count(b'\t'), 'TAB.', end='  ')
+            content.count(b'\t'), 'TAB.', end=printNL)
 
     content = content.replace(b'\r\r\n', b'\n') # Workaround clang-format 8.0.1 bug that does this
     content = content.replace(b'\r\n', b'\n') # Replace CRLF with LF
@@ -38,7 +38,7 @@ def fixFileWhitespace(file_path, doCRLF, doWrite, doCollapseSpaces, nlPerParaIn,
 
     if verbose:
         print('Trailing space lines: ', end='')
-    content = replaceLoop(content, b' \n', b'\n', verbose) # Remove trailing spaces
+    content = replaceLoop(content, b' \n', b'\n', verbose, printNL) # Remove trailing spaces
 
     # Do cleanup for .txt files that don't apply to code
 
@@ -58,12 +58,12 @@ def fixFileWhitespace(file_path, doCRLF, doWrite, doCollapseSpaces, nlPerParaIn,
 
         if verbose:
             print('Multiple paragraph breaks: ', end='')
-        content = replaceLoop(content, b'\r\r', b'\r', verbose) # Collapse multiple paragraph breaks into one
+        content = replaceLoop(content, b'\r\r', b'\r', verbose, printNL) # Collapse multiple paragraph breaks into one
 
     if doCollapseSpaces:
         if verbose:
             print('Multiple spaces: ', end='')
-        content = replaceLoop(content, b'  ', b' ', verbose) # Remove multiple spaces.
+        content = replaceLoop(content, b'  ', b' ', verbose, printNL) # Remove multiple spaces.
 
     if nlPerParaIn > 0:
         # Paragraph Mode
@@ -81,11 +81,11 @@ def fixFileWhitespace(file_path, doCRLF, doWrite, doCollapseSpaces, nlPerParaIn,
     # As we finish, switch to CRLF if desired
     if doCRLF:
         if verbose:
-            print('To CRLF', end='  ')
+            print('To CRLF', end=printNL)
         content = content.replace(b'\n', b'\r\n') # Replace LF with CRLF
 
     if verbose:
-        print('Orig length:', len(orig_content), 'new length:', len(content), end='  ')
+        print('Orig length:', len(orig_content), 'new length:', len(content), end=printNL)
 
     if content != orig_content:
         if doWrite:
@@ -122,7 +122,7 @@ def main():
                         action='store_true',
                         default=False,
                         help='Collapse multiple spaces; remove leading spaces')
-    parser.add_argument('--paragraph',
+    parser.add_argument('-p', '--paragraph',
                         nargs=2,
                         metavar=('NIN', 'NOUT'),
                         dest='para',
@@ -139,10 +139,10 @@ def main():
     args = parser.parse_args()
 
     for fname in args.fname:
-        print(fname, end=' ')
+        print(fname)
         fixFileWhitespace(fname, args.to_crlf, not args.no_write, args.collapse,
-            int(args.para[0]), int(args.para[1]), not args.quiet)
-        print('')
+            int(args.para[0]), int(args.para[1]), not args.quiet, '\n')
+        print('\n')
 
 if __name__ == "__main__":
     main()

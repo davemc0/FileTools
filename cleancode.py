@@ -35,7 +35,7 @@ def cleanDirs(dirs, doCRLF, doWrite, doEatWhite, doClangFormat, verbose):
         filename, fileext = os.path.splitext(file)
 
         if fileext in eatWhiteExts and doEatWhite:
-            eatwhite.fixFileWhitespace(file, doCRLF, doWrite, False, 0, 0, verbose)
+            eatwhite.fixFileWhitespace(file, doCRLF, doWrite, False, 0, 0, verbose, '  ')
 
         if fileext in clangFilterExts and doClangFormat:
             fileTmp = file + '.CF'
