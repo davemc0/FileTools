@@ -3,7 +3,22 @@
 import sys
 import argparse
 
-def fixFileWhitespace(file_path, doCRLF, doWrite, verbose):
+def replaceLoop(content, oldt, newt, verbose):
+    replCnt = content.count(oldt)
+    while replCnt > 0:
+        if verbose:
+            print(replCnt, end=' ')
+        content = content.replace(oldt, newt)
+        replCnt = content.count(oldt)
+    if verbose:
+        print(replCnt, end='  ')
+
+    return content
+
+def fixFileWhitespace(file_path, doCRLF, doWrite, doCollapseSpaces, nlPerParaIn, nlPerParaOut, verbose):
+    '''Get rid of all whitespace issues in the given file, with modes for source code and text files.'''
+    '''Can convert line endings to LF or CRLF. Can specify how to do paragraph endings.'''
+
     with open(file_path, 'rb') as open_file:
         content = open_file.read()
 
@@ -23,15 +38,45 @@ def fixFileWhitespace(file_path, doCRLF, doWrite, verbose):
 
     if verbose:
         print('Trailing space lines: ', end='')
+    content = replaceLoop(content, b' \n', b'\n', verbose) # Remove trailing spaces
 
-    tspaceCnt = content.count(b' \n')
-    while tspaceCnt > 0:
+    # Do cleanup for .txt files that don't apply to code
+
+    if nlPerParaIn > 0:
+        # Paragraph Mode
+        # A paragraph break in input text is defined as nlPerParaIn newlines.
+        # Replace these with \r as a temporary paragraph break (since \r is now not in content).
+        content = content.replace(b'\n' * nlPerParaIn, b'\r')
+
+        # There may be remaining \n at end of file that were not enough to form a paragraph break.
+        # Remove file end whitespace
+        while content[-1] == ord('\n') or content[-1] == ord(' '):
+            content = content[0:-1]
+
+        # Remaining \n are line breaks within a paragraph. Replace with spaces.
+        content = content.replace(b'\n', b' ')
+
         if verbose:
-            print(tspaceCnt, end=' ')
-        content = content.replace(b' \n', b'\n') # Remove last trailing space
-        tspaceCnt = content.count(b' \n')
-    if verbose:
-        print(tspaceCnt, end='  ')
+            print('Multiple paragraph breaks: ', end='')
+        content = replaceLoop(content, b'\r\r', b'\r', verbose) # Collapse multiple paragraph breaks into one
+
+    if doCollapseSpaces:
+        if verbose:
+            print('Multiple spaces: ', end='')
+        content = replaceLoop(content, b'  ', b' ', verbose) # Remove multiple spaces.
+
+    if nlPerParaIn > 0:
+        # Paragraph Mode
+        content = content.replace(b'\r', b'\n' * nlPerParaOut) # Convert paragraph breaks back to nlPerParaOut newlines
+
+        # Make sure file ends with one newline
+        if content[-1] != ord('\n'):
+            content = content + b'\n'
+
+    if doCollapseSpaces:
+        content = content.replace(b'\n ', b'\n') # Remove leading spaces.
+        while content[0] == ord('\n') or content[0] == ord(' '):
+            content = content[1:]
 
     # As we finish, switch to CRLF if desired
     if doCRLF:
@@ -73,17 +118,30 @@ def main():
                         action='store_false',
                         default=True,
                         help='Convert all lines to LF')
-    parser.add_argument('-v', '--verbose',
+    parser.add_argument('-c', '--collapse',
                         action='store_true',
                         default=False,
-                        help='Say everything')
-    parser.add_argument('fname', nargs='+', help='File to convert')
+                        help='Collapse multiple spaces; remove leading spaces')
+    parser.add_argument('--paragraph',
+                        nargs=2,
+                        metavar=('NIN', 'NOUT'),
+                        dest='para',
+                        default=(0, 0),
+                        help='Convert paragraph breaks from NIN newlines to NOUT newlines; convert newlines in paragraphs to spaces; collapse multiple newlines')
+    parser.add_argument('-q', '--quiet',
+                        action='store_true',
+                        default=False,
+                        help='Say little')
+    parser.add_argument('fname',
+                        nargs='+',
+                        help='Files to convert')
 
     args = parser.parse_args()
 
     for fname in args.fname:
         print(fname, end=' ')
-        fixFileWhitespace(fname, args.to_crlf, not args.no_write, args.verbose)
+        fixFileWhitespace(fname, args.to_crlf, not args.no_write, args.collapse,
+            int(args.para[0]), int(args.para[1]), not args.quiet)
         print('')
 
 if __name__ == "__main__":

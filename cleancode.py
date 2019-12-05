@@ -35,7 +35,7 @@ def cleanDirs(dirs, doCRLF, doWrite, doEatWhite, doClangFormat, verbose):
         filename, fileext = os.path.splitext(file)
 
         if fileext in eatWhiteExts and doEatWhite:
-            eatwhite.fixFileWhitespace(file, doCRLF, doWrite, verbose)
+            eatwhite.fixFileWhitespace(file, doCRLF, doWrite, False, 0, 0, verbose)
 
         if fileext in clangFilterExts and doClangFormat:
             fileTmp = file + '.CF'
@@ -89,8 +89,11 @@ def main():
     parser.add_argument('-q', '--quiet',
                         action='store_true',
                         default=False,
-                        help='Say everything')
-    parser.add_argument('fname', nargs='*', default=['.'], help='File to convert')
+                        help='Say little')
+    parser.add_argument('fname',
+                        nargs='*',
+                        default=['.'],
+                        help='Files to convert')
 
     args = parser.parse_args()
 

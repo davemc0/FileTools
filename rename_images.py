@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+# Rename all image files consistently, based on metadata stored in the image file
 
 import sys
 import os
