@@ -1,0 +1,142 @@
+#!python
+
+# Convert bank CSV files for appending to my Excel sheet
+
+import csv
+import argparse
+import os
+
+def replaceLoop(content, oldt, newt, verbose, printNL):
+    replCnt = content.count(oldt)
+    while replCnt > 0:
+        if verbose:
+            print(replCnt, end=' ')
+        content = content.replace(oldt, newt)
+        replCnt = content.count(oldt)
+    if verbose:
+        print(replCnt, end=printNL)
+
+    return content
+
+def process_uucu_file(file_path):
+    '''Transactions_S-90.csv is from UUCU'''
+    
+    # Clean up line ends, etc.
+    with open(file_path, 'rb') as open_file:
+        content = open_file.read()
+
+    print(
+        content.count(b'\n'), 'CRLF,',
+        content.count(b'\r'), 'CR,',
+        content.count(b'\n '), 'LF,',
+        content.count(b'\t'), 'TAB.')
+
+    content = content.replace(b'\n', b' ')
+    content = content.replace(b'\r ', b'\r')
+
+    content = replaceLoop(content, b'  ', b' ', False, '\n') # Remove multiple spaces
+    content = replaceLoop(content, b' \r', b'\r', False, '\n') # Remove trailing spaces
+
+    content = content.replace(b'\r', b'\r\n')
+
+    with open('tmp.csv', 'wb') as open_file:
+        open_file.write(content)
+
+    rows = []
+    
+    # Clean up columns, etc.
+    with open('tmp.csv', 'r') as csvfile:
+        csvreader = csv.DictReader(csvfile)
+        
+        for row in csvreader:
+            row.pop('Balance')
+            
+            print(row['Description'])
+            
+            for chop in ['Withdrawal by', 'Deposit by', 'Withdrawal', 'Deposit', 'BUSINESS DEBIT', 'Visa Debit', 'Bill Payment']:
+                row['Description'] = row['Description'].replace(chop, '')
+            
+            print(row['Description'])
+            
+            row['Description'] = row['Description'].replace('THE HOME DEPOT', 'HOME DEPOT')
+
+            while row['Description'][0] in list('#0123456789 '):
+                row['Description'] = row['Description'][1:]
+                
+            row['Description'] = replaceLoop(row['Description'], '  ', ' ', False, '\n')
+            
+            if 'Transfer From Loan' in row['Description'] or 'Transfer To Loan' in row['Description']:
+                row['Note'] = '$ Loan Xfer'
+            rows.append(row)
+            
+    os.remove('tmp.csv')
+    
+    fieldnames = [key for key in rows[0]]
+
+    with open('uucu.csv', 'w', newline='') as csvfile:
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+
+        writer.writeheader()
+        for row in rows:
+            writer.writerow(row)
+
+def process_amex_file(file_path):
+    '''activity.csv is from AmEx'''
+
+    rows = []
+    
+    # Clean up columns, etc.
+    with open(file_path, 'r') as csvfile:
+        csvreader = csv.DictReader(csvfile)
+        
+        for row in csvreader:
+            acct = 'DaveAcct' if '-6' in row['Card Number'] else 'TiffAcct'
+            row['Account'] = acct + '-' + row['Card Member']
+            
+            row['Detail'] = row['Category']
+            row.pop('Category')
+            row.pop('Card Number')
+            row.pop('Card Member')
+            row.pop('Type')
+            row.pop('Reference')
+            
+            row['Description'] = row['Description'].replace('THE HOME DEPOT', 'HOME DEPOT')
+            
+            row['Description'] = replaceLoop(row['Description'], '  ', ' ', False, '\n')
+            row['Amount'] = str(-float(row['Amount'])) # Negate the amount for AmEx
+            
+            if 'ELECTRONIC PAYMENT RECEIVED' in row['Description']:
+                row['Category'] = '$ Pay AmEx'
+
+            rows.append(row)
+
+    fieldnames = ['Account', 'Date', 'Description', 'Category', 'Detail', 'Amount']
+
+    with open('amex.csv', 'w', newline='') as csvfile:
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+
+        writer.writeheader()
+        for row in rows:
+            writer.writerow(row)
+
+def main():
+    parser = argparse.ArgumentParser(
+        description='bankcsv.py - Fix up CSV files from banks')
+
+    parser.add_argument('fname',
+                        nargs='+',
+                        help='Files to convert')
+
+    args = parser.parse_args()
+
+    for fname in args.fname:
+        print(fname)
+        if 'Transac' in fname:
+            process_uucu_file(fname)
+        elif 'activity' in fname:
+            process_amex_file(fname)
+        else:
+            print('Unrecognized filename', fname)
+
+if __name__ == "__main__":
+    main()

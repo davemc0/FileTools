@@ -7,6 +7,7 @@ import shutil
 import filecmp
 
 clangFilterExts = {'.c', '.cpp', '.cl', '.cu', '.h', '.hpp', '.cuh'}
+clangFilterCPPExts = {'.cl', '.cu', '.cuh'} # Extensions that we rename to .cpp before running clang-format
 eatWhiteExts = clangFilterExts | {'.txt', '.cfg', '.md', '.py', '.bat', '.sh', '.y', '.l', '.py', '.pl', '.csh'}
 skipFolders = {'assets', 'build', 'deps', 'output', '.git', 'DMcTools_vc120', 'DMcTools_vc141', 'DMcTools_vc142', 'GenArt_vc142', 'GenArt_vc120'}
 
@@ -38,21 +39,31 @@ def cleanDirs(dirs, doCRLF, doWrite, doEatWhite, doClangFormat, verbose):
             eatwhite.fixFileWhitespace(file, doCRLF, doWrite, False, 0, 0, verbose, '  ')
 
         if fileext in clangFilterExts and doClangFormat:
-            fileTmp = file + '.CF'
-            cmd = clangFormatPath + ' ' + clangFormatArgs + ' ' + file + ' > ' + fileTmp
+            fileInTmp = file
+            if fileext in clangFilterCPPExts:
+                fileInTmp = file + '_CF.cpp'
+                shutil.copyfile(file, fileInTmp)
+
+            fileOutTmp = file + '.CF'
+            cmd = clangFormatPath + ' ' + clangFormatArgs + ' ' + fileInTmp + ' > ' + fileOutTmp
             # print('\n', cmd)
             os.system(cmd)
-            if filecmp.cmp(file, fileTmp):
+
+            if fileInTmp != file:
+                # print('Remove', fileInTmp)
+                os.remove(fileInTmp)
+
+            if filecmp.cmp(file, fileOutTmp):
                 print(' Clang-format matched.')
             else:
                 if doWrite:
                     #os.remove(file)
-                    shutil.copyfile(fileTmp, file)
+                    shutil.copyfile(fileOutTmp, file)
                     print(' Clang-format saved.')
                 else:
                     print(' Clang-format changes not saved.')
 
-            os.remove(fileTmp)
+            os.remove(fileOutTmp)
         elif fileext not in eatWhiteExts:
             print('Skipping:', file)
         else:
