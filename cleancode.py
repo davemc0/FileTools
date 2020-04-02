@@ -1,19 +1,50 @@
-#!/usr/bin/python
+#!python
+
+# Copyright 2010-2019 by David McAllister
 
 import argparse
 import eatwhite
 import os
 import shutil
 import filecmp
+import pathlib
 
 clangFilterExts = {'.c', '.cpp', '.cl', '.cu', '.h', '.hpp', '.cuh'}
 clangFilterCPPExts = {'.cl', '.cu', '.cuh'} # Extensions that we rename to .cpp before running clang-format
 eatWhiteExts = clangFilterExts | {'.txt', '.cfg', '.md', '.py', '.bat', '.sh', '.y', '.l', '.py', '.pl', '.csh'}
 skipFolders = {'assets', 'build', 'deps', 'output', '.git', 'DMcTools_vc120', 'DMcTools_vc141', 'DMcTools_vc142', 'GenArt_vc142', 'GenArt_vc120'}
 
-#clangFormatPath = '"C:/Program Files/LLVM/bin/clang-format.exe"'
-clangFormatPath = '"C:/Users/davemc/AppData/Local/Microsoft/VisualStudio/14.0/Extensions/qd5ak3fn.lc0/clang-format.exe"'
 clangFormatArgs = ''
+clangFormatPath = 'clang-format.exe'
+
+def tryCFPath(tryPath):
+    global clangFormatPath
+    
+    pth = pathlib.Path(tryPath)
+    if pth.exists():
+        clangFormatPath = str(pth)
+        return True
+    return False
+    
+def setCFPath(firstTry):
+    global clangFormatPath
+
+    if tryCFPath(firstTry):
+        return
+
+    pth = pathlib.Path(__file__).parent / './clang-format.exe'
+    cf = str(pth.resolve())
+
+    if tryCFPath(cf):
+        return
+    if tryCFPath('C:/Program Files/LLVM/bin/clang-format.exe'):
+        return
+    if tryCFPath('./clang-format.exe'):
+        return
+    if tryCFPath('C:/Users/davemc/AppData/Local/Microsoft/VisualStudio/14.0/Extensions/nv5n2tts.1vr/clang-format.exe'):
+        return
+    print("Can't find clang-format.exe.")
+    exit(1)
 
 # Returns a generator
 def allFiles(dirs):
@@ -70,9 +101,14 @@ def cleanDirs(dirs, doCRLF, doWrite, doEatWhite, doClangFormat, verbose):
             print('')
 
 def main():
+    global clangFormatPath
+    
     parser = argparse.ArgumentParser(
         description='cleancode.py - Clean whitespace and formatting in all files in tree')
 
+    parser.add_argument('--clang-format-path',
+                        default=clangFormatPath,
+                        help='The first path of a clang-format executable to try')
     parser.add_argument('-n', '--no-write',
                         action='store_true',
                         default=False,
@@ -88,7 +124,7 @@ def main():
                         default=True,
                         help='Do not eat white')
     parser.add_argument('--no-clang-format',
-                        dest='clang_format',
+                        dest='do_clang_format',
                         action='store_false',
                         default=True,
                         help='Do not do clang-format')
@@ -108,7 +144,10 @@ def main():
 
     args = parser.parse_args()
 
-    cleanDirs(args.fname, args.to_crlf, not args.no_write, args.eatwhite, args.clang_format, not args.quiet)
+    setCFPath(args.clang_format_path)
+    print('Using:', clangFormatPath)
+
+    cleanDirs(args.fname, args.to_crlf, not args.no_write, args.eatwhite, args.do_clang_format, not args.quiet)
 
 if __name__ == "__main__":
     main()

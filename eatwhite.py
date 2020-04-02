@@ -1,4 +1,6 @@
-#!/usr/bin/python
+#!python
+
+# Copyright 2010-2019 by David McAllister
 
 import sys
 import argparse
@@ -14,6 +16,15 @@ def replaceLoop(content, oldt, newt, verbose, printNL):
         print(replCnt, end=printNL)
 
     return content
+
+def warnUnicode(content):
+    i = 0
+    didNL = False
+    for b in content:
+        if b >= 128:
+            print(('' if didNL else '\n'), 'Bad byte:', b, 'offset:', i)
+            didNL = True
+        i += 1
 
 def fixFileWhitespace(file_path, doCRLF, doWrite, doCollapseSpaces, nlPerParaIn, nlPerParaOut, verbose, printNL):
     '''Get rid of all whitespace issues in the given file, with modes for source code and text files.'''
@@ -31,6 +42,12 @@ def fixFileWhitespace(file_path, doCRLF, doWrite, doCollapseSpaces, nlPerParaIn,
             content.count(b'\n'), 'LF,',
             content.count(b'\t'), 'TAB.', end=printNL)
 
+    content = content.replace(b'\xef\xbb\xbf', b'') # Remove unicode byte order mark
+    content = content.replace(b'\xe2\x80\x9c', b'"') # Unicode quotes
+    content = content.replace(b'\xe2\x80\x9d', b'"') # Unicode quotes
+    content = content.replace(b'\xe2\x80\x99', b'\'') # Unicode quotes
+    content = content.replace(b'\xe2\x80\x93', b'-') # Unicode hyphen
+    content = content.replace(b'\xc2\x85', b'\n') # Unicode new line
     content = content.replace(b'\r\r\n', b'\n') # Workaround clang-format 8.0.1 bug that does this
     content = content.replace(b'\r\n', b'\n') # Replace CRLF with LF
     content = content.replace(b'\r', b'\n') # Replace rogue CR with LF
@@ -39,6 +56,9 @@ def fixFileWhitespace(file_path, doCRLF, doWrite, doCollapseSpaces, nlPerParaIn,
     if verbose:
         print('Trailing space lines: ', end='')
     content = replaceLoop(content, b' \n', b'\n', verbose, printNL) # Remove trailing spaces
+
+    # Search for any remaining unicode characters
+    warnUnicode(content)
 
     # Do cleanup for .txt files that don't apply to code
 
