@@ -2,6 +2,13 @@
 
 # Copyright 2010-2019 by David McAllister
 
+from __future__ import print_function
+import sys
+
+if sys.hexversion < 0x03050000:
+    print('Python 3.5 or newer is required. Download it from python.org.')
+    exit(1)
+
 import sys
 import argparse
 
@@ -26,6 +33,14 @@ def warnUnicode(content):
             didNL = True
         i += 1
 
+def findWavy(content):
+    '''Remove blank line before "}"'''
+
+    for nsp in range(0, 24, 4):
+        content = content.replace(b'\n\n' + b' ' * nsp + b'}', b'\n' + b' ' * nsp + b'}')
+
+    return content
+
 def fixFileWhitespace(file_path, doCRLF, doWrite, doCollapseSpaces, nlPerParaIn, nlPerParaOut, verbose, printNL):
     '''Get rid of all whitespace issues in the given file, with modes for source code and text files.'''
     '''Can convert line endings to LF or CRLF. Can specify how to do paragraph endings.'''
@@ -41,6 +56,10 @@ def fixFileWhitespace(file_path, doCRLF, doWrite, doCollapseSpaces, nlPerParaIn,
             content.count(b'\r'), 'CR,',
             content.count(b'\n'), 'LF,',
             content.count(b'\t'), 'TAB.', end=printNL)
+
+    if len(content) == 0:
+        print('Empty file')
+        return
 
     content = content.replace(b'\xef\xbb\xbf', b'') # Remove unicode byte order mark
     content = content.replace(b'\xe2\x80\x9c', b'"') # Unicode quotes
@@ -59,6 +78,8 @@ def fixFileWhitespace(file_path, doCRLF, doWrite, doCollapseSpaces, nlPerParaIn,
 
     # Search for any remaining unicode characters
     warnUnicode(content)
+
+    content = findWavy(content)
 
     # Do cleanup for .txt files that don't apply to code
 
@@ -89,14 +110,17 @@ def fixFileWhitespace(file_path, doCRLF, doWrite, doCollapseSpaces, nlPerParaIn,
         # Paragraph Mode
         content = content.replace(b'\r', b'\n' * nlPerParaOut) # Convert paragraph breaks back to nlPerParaOut newlines
 
-        # Make sure file ends with one newline
-        if content[-1] != ord('\n'):
-            content = content + b'\n'
+    # Make sure file ends with one newline
+    if content[-1] != ord('\n'):
+        content = content + b'\n'
 
+    # Remove paragraph indents
     if doCollapseSpaces:
-        content = content.replace(b'\n ', b'\n') # Remove leading spaces.
-        while content[0] == ord('\n') or content[0] == ord(' '):
-            content = content[1:]
+        content = content.replace(b'\n ', b'\n') # No need to loop this since spaces have been collapsed
+
+    # Remove file leading whitespace
+    while content[0] == ord('\n') or content[0] == ord(' '):
+        content = content[1:]
 
     # As we finish, switch to CRLF if desired
     if doCRLF:

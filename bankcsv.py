@@ -20,7 +20,7 @@ def replaceLoop(content, oldt, newt, verbose, printNL):
 
 def process_uucu_file(file_path):
     '''Transactions_S-90.csv is from UUCU'''
-    
+
     # Clean up line ends, etc.
     with open(file_path, 'rb') as open_file:
         content = open_file.read()
@@ -43,34 +43,35 @@ def process_uucu_file(file_path):
         open_file.write(content)
 
     rows = []
-    
+
     # Clean up columns, etc.
     with open('tmp.csv', 'r') as csvfile:
         csvreader = csv.DictReader(csvfile)
-        
+
         for row in csvreader:
             row.pop('Balance')
-            
+
             print(row['Description'])
-            
+
             for chop in ['Withdrawal by', 'Deposit by', 'Withdrawal', 'Deposit', 'BUSINESS DEBIT', 'Visa Debit', 'Bill Payment']:
                 row['Description'] = row['Description'].replace(chop, '')
-            
-            print(row['Description'])
-            
-            row['Description'] = row['Description'].replace('THE HOME DEPOT', 'HOME DEPOT')
 
-            while row['Description'][0] in list('#0123456789 '):
+            print(row['Description'])
+
+            row['Description'] = row['Description'].replace('THE HOME DEPOT', 'HOME DEPOT')
+            row['Description'] = row['Description'].replace('The Home Depot', 'HOME DEPOT')
+
+            while len(row['Description']) and row['Description'][0] in list('#0123456789 '):
                 row['Description'] = row['Description'][1:]
-                
+
             row['Description'] = replaceLoop(row['Description'], '  ', ' ', False, '\n')
-            
+
             if 'Transfer From Loan' in row['Description'] or 'Transfer To Loan' in row['Description']:
                 row['Note'] = '$ Loan Xfer'
             rows.append(row)
-            
+
     os.remove('tmp.csv')
-    
+
     fieldnames = [key for key in rows[0]]
 
     with open('uucu.csv', 'w', newline='') as csvfile:
@@ -84,27 +85,32 @@ def process_amex_file(file_path):
     '''activity.csv is from AmEx'''
 
     rows = []
-    
+
     # Clean up columns, etc.
     with open(file_path, 'r') as csvfile:
         csvreader = csv.DictReader(csvfile)
-        
+
         for row in csvreader:
-            acct = 'DaveAcct' if '-6' in row['Card Number'] else 'TiffAcct'
+            acct = 'DaveAcct' if '-6' in row['Account #'] else 'TiffAcct'
             row['Account'] = acct + '-' + row['Card Member']
-            
-            row['Detail'] = row['Category']
-            row.pop('Category')
-            row.pop('Card Number')
+
+            if 'Category' in row:
+                row['Detail'] = row['Category']
+                row.pop('Category')
+            else:
+                row['Detail'] = ''
+            row.pop('Account #')
             row.pop('Card Member')
-            row.pop('Type')
-            row.pop('Reference')
-            
+            if 'Type' in row:
+                row.pop('Type')
+            if 'Reference' in row:
+                row.pop('Reference')
+
             row['Description'] = row['Description'].replace('THE HOME DEPOT', 'HOME DEPOT')
-            
+
             row['Description'] = replaceLoop(row['Description'], '  ', ' ', False, '\n')
             row['Amount'] = str(-float(row['Amount'])) # Negate the amount for AmEx
-            
+
             if 'ELECTRONIC PAYMENT RECEIVED' in row['Description']:
                 row['Category'] = '$ Pay AmEx'
 
