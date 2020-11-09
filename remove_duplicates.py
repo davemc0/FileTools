@@ -161,7 +161,7 @@ def main():
             for file in files[1:]:
                 print("Dup: " + file)
             if do_delete:
-                tokill = int(input('Delete which? '))
+                tokill = int(input('Delete which? (0=Org, etc.) >'))
                 os.remove(files[tokill])
                 print("Deleted", files[tokill])
 
