@@ -106,6 +106,8 @@ def process_amex_file(file_path):
             if 'Reference' in row:
                 row.pop('Reference')
 
+            row['Description'] = row['Description'].replace('AplPay ', '')
+            row['Description'] = row['Description'].replace('1112 DOWNEAST', 'DOWNEAST')
             row['Description'] = row['Description'].replace('THE HOME DEPOT', 'HOME DEPOT')
 
             row['Description'] = replaceLoop(row['Description'], '  ', ' ', False, '\n')
