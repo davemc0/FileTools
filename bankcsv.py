@@ -18,6 +18,20 @@ def replaceLoop(content, oldt, newt, verbose, printNL):
 
     return content
 
+def removeStars(content):
+    '''Remove prefixes separated by a * from descriptions'''
+
+    prefixes = ['ACT', 'AMZ', 'BT', 'FS', 'GG', 'PAYPAL', 'PTI', 'SP', 'TST',]
+
+    segs = content.split('*')
+    if len(segs) > 2:
+        print(segs)
+    if segs[0].strip() in prefixes:
+        content = ('*'.join(segs[1:])).strip()
+        print('Replaced with:', content)
+
+    return content
+
 def process_uucu_file(file_path):
     '''Transactions_S-90.csv is from UUCU'''
 
@@ -106,13 +120,16 @@ def process_amex_file(file_path):
             if 'Reference' in row:
                 row.pop('Reference')
 
+            # Clean up description
             row['Description'] = row['Description'].replace('AplPay ', '')
             row['Description'] = row['Description'].replace('1112 DOWNEAST', 'DOWNEAST')
             row['Description'] = row['Description'].replace('THE HOME DEPOT', 'HOME DEPOT')
-
             row['Description'] = replaceLoop(row['Description'], '  ', ' ', False, '\n')
+            row['Description'] = removeStars(row['Description'])
+
             row['Amount'] = str(-float(row['Amount'])) # Negate the amount for AmEx
 
+            # Automatic categorization
             if 'ELECTRONIC PAYMENT RECEIVED' in row['Description']:
                 row['Category'] = '$ Pay AmEx'
 
@@ -126,6 +143,8 @@ def process_amex_file(file_path):
         writer.writeheader()
         for row in rows:
             writer.writerow(row)
+
+    print('Done with AmEx')
 
 def main():
     parser = argparse.ArgumentParser(
