@@ -9,6 +9,18 @@ level37 = ['GBgv', 'ggPv', 'prvo', 'GPbb', 'brBG', 'roBr', 'vbPp', 'Goop', 'BPpg
 level50 = ['ogPv', 'pppr', 'gPgb', 'vobB', 'BPbv', 'pGbB', 'gPro', 'GvGr', 'GoBr', '', '']
 level52 = ['gppr', 'Bvbb', 'vvPG', 'bGBr', 'gorB', 'gGPg', 'PPor', 'oboB', 'Gpvp', '', '']
 level105= ['BGbb', 'Ppgv', 'oPrd', 'opro', 'GryB', 'yGdG', 'dPrl', 'lPpl', 'gvbB', 'dyvg', 'vylB', 'gbpo', '', '']
+level874= ['grbB', 'bobr', 'rlpo', 'PBgp', 'lgbl', 'BGpl', 'oGBg', 'Popr', 'PGGP', '', '']
+
+# g grey
+# r red
+# b light blue
+# B dark blue
+# o orange
+# l light green
+# p pink
+# P purple
+# G dark green
+
 
 def getParams():
     global vials
@@ -18,7 +30,7 @@ def getParams():
     nVials = -1
 
     if nVials == -1:
-        vials = level105
+        vials = level874
         return
 
     vials = ['' for v in range(nVials)]

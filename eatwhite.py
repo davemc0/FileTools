@@ -12,6 +12,15 @@ if sys.hexversion < 0x03050000:
 import sys
 import argparse
 
+def red(text, **kwargs):
+    print('\033[31m', text, '\033[0m', sep='', **kwargs)
+
+def green(text, **kwargs):
+    print('\033[32m', text, '\033[0m', sep='', **kwargs)
+
+def yellow(text, **kwargs):
+    print('\033[33m', text, '\033[0m', sep='', **kwargs)
+
 def replaceLoop(content, oldt, newt, verbose, printNL):
     replCnt = content.count(oldt)
     while replCnt > 0:
@@ -100,6 +109,8 @@ def fixFileWhitespace(file_path, doCRLF, doWrite, doCollapseSpaces, nlPerParaIn,
         if verbose:
             print('Multiple paragraph breaks: ', end='')
         content = replaceLoop(content, b'\r\r', b'\r', verbose, printNL) # Collapse multiple paragraph breaks into one
+    else:
+        content = replaceLoop(content, b'\n\n\n', b'\n\n', verbose, printNL) # Collapse multiple blank lines into one
 
     if doCollapseSpaces:
         if verbose:
@@ -135,14 +146,11 @@ def fixFileWhitespace(file_path, doCRLF, doWrite, doCollapseSpaces, nlPerParaIn,
         if doWrite:
             with open(file_path, 'wb') as open_file:
                 open_file.write(content)
-            if verbose:
-                print('Saved changes.', end='')
+            yellow('Saved whitespace changes.', end='')
         else:
-            if verbose:
-                print('Changes not saved.', end='')
+            red('Whitespace changes not saved.', end='')
     else:
-        if verbose:
-            print('No changes needed.', end='')
+            green('No whitespace changes needed.', end='')
 
 def main():
     parser = argparse.ArgumentParser(
