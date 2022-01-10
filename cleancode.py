@@ -148,7 +148,7 @@ def lineUnwrap(file, doWrite):
 def commentFix(file, doWrite):
     '''Capitalize comments'''
 
-    capStoppers = {'=', ';', '>', '[', ':', '<', 'vvv', 'm_', 'namespace', 'elif', 'endif'}
+    capStoppers = {'=', ';', '>', '[', ':', '<', 'vvv', 'm_', 'namespace', 'elif', 'endif', 'typedef'}
     inFile = ''
     outFile = ''
     inClangFormatOff = False

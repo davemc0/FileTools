@@ -19,15 +19,36 @@ def replaceLoop(content, oldt, newt, verbose, printNL):
     return content
 
 def removeStars(content):
-    '''Remove prefixes separated by a * from descriptions'''
+    '''Remove prefixes separated by punctuation from descriptions'''
 
-    prefixes = ['ACT', 'AMZ', 'BT', 'FS', 'GG', 'PAYPAL', 'PTI', 'SP', 'TST',]
+    # *
+    prefixes = ['ACT', 'AMZ', 'BT', 'FS', 'GG', 'PAYPAL', 'PTI', 'SP', 'TST', 'WPY']
 
     segs = content.split('*')
     if len(segs) > 2:
         print(segs)
     if segs[0].strip() in prefixes:
         content = ('*'.join(segs[1:])).strip()
+        print('Replaced with:', content)
+
+    # .
+    prefixes = ['WWW',]
+
+    segs = content.split('.')
+    if len(segs) > 2:
+        print(segs)
+    if segs[0].strip() in prefixes:
+        content = ('.'.join(segs[1:])).strip()
+        print('Replaced with:', content)
+
+    # space
+    prefixes = ['WWW',]
+
+    segs = content.split(' ')
+    if len(segs) > 2:
+        print(segs)
+    if segs[0].strip() in prefixes:
+        content = (' '.join(segs[1:])).strip()
         print('Replaced with:', content)
 
     return content
@@ -68,7 +89,8 @@ def process_uucu_file(file_path):
             print(row['Description'])
 
             for chop in ['Withdrawal by', 'Deposit by', 'Withdrawal', 'Deposit', 'BUSINESS DEBIT', 'Visa Debit', 'Bill Payment']:
-                row['Description'] = row['Description'].replace(chop, '')
+                if row['Description'] != 'Withdrawal' and row['Description'] != 'Deposit':
+                    row['Description'] = row['Description'].replace(chop, '')
 
             print(row['Description'])
 
