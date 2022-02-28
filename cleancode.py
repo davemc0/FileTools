@@ -24,11 +24,12 @@ import pathlib
 clangFilterExts = {'.c', '.cpp', '.cl', '.cu', '.h', '.hpp', '.cuh'}
 clangFilterCPPExts = {'.cl', '.cu', '.cuh'} # Extensions that we rename to .cpp before running clang-format
 eatWhiteExts = clangFilterExts | {'.txt', '.cfg', '.md', '.py', '.bat', '.sh', '.y', '.l', '.py', '.pl', '.csh'}
-skipFolders = {'__pycache__', 'assets', 'build', 'build_hlm', 'build_android', 'deps', 'output', 'input', '.git', 'DMcTools_vc120', 'DMcTools_vc141', 'DMcTools_vc142', 'GenArt_vc142', 'GenArt_vc120', 'default'}
+skipFolders = {'__pycache__', 'assets', 'build', 'deps', 'output', 'input', '.git', 'DMcTools_vc120', 'DMcTools_vc141', 'DMcTools_vc142', 'GenArt_vc142', 'GenArt_vc120', 'default'}
 
 clangFormatArgs = ''
-clangFormatPath = 'clang-format.exe'
+clangFormatPath = pathlib.Path('clang-format.exe')
 
+# kwargs is keyword args.
 def red(text, **kwargs):
     print('\033[31m', text, '\033[0m', sep='', **kwargs)
 
@@ -38,38 +39,38 @@ def green(text, **kwargs):
 def yellow(text, **kwargs):
     print('\033[33m', text, '\033[0m', sep='', **kwargs)
 
-def tryCFPath(tryPath, verbose):
+def tryClangFormatPath(tryPath, verbose):
     global clangFormatPath
 
     pth = pathlib.Path(tryPath)
     if verbose:
         print('Trying:', pth)
     if pth.exists():
-        clangFormatPath = str(pth)
+        clangFormatPath = pth
         return True
     return False
 
-def setCFPath(firstTry, verbose):
+def setClangFormatPath(firstTry, verbose):
     '''Find clang-format.exe'''
 
-    if tryCFPath(firstTry, verbose):
+    if tryClangFormatPath(firstTry, verbose):
         return
 
     # Try the directory relative to this script
-    pth = pathlib.Path(__file__).parent.parent / 'assets/tools/clang-format.exe'
-    if tryCFPath(str(pth.resolve()), verbose):
+    pth = pathlib.Path(__file__).parent.parent / 'tools/clang-format.exe'
+    if tryClangFormatPath(str(pth.resolve()), verbose):
         return
 
     # Try the same directory containing this script
     pth = pathlib.Path(__file__).parent / 'clang-format.exe'
-    if tryCFPath(str(pth.resolve()), verbose):
+    if tryClangFormatPath(str(pth.resolve()), verbose):
         return
 
-    if tryCFPath('./clang-format.exe', verbose):
+    if tryClangFormatPath('./clang-format.exe', verbose):
         return
-    if tryCFPath('C:/Users/davemc/AppData/Local/Microsoft/VisualStudio/14.0/Extensions/nv5n2tts.1vr/clang-format.exe', verbose):
+    if tryClangFormatPath('C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/VC/Tools/Llvm/x64/bin/clang-format.exe', verbose):
         return
-    if tryCFPath('C:/Program Files/LLVM/bin/clang-format.exe', verbose):
+    if tryClangFormatPath('C:/Program Files/LLVM/bin/clang-format.exe', verbose):
         return
 
     red("Can't find clang-format.exe.")
@@ -148,7 +149,7 @@ def lineUnwrap(file, doWrite):
 def commentFix(file, doWrite):
     '''Capitalize comments'''
 
-    capStoppers = {'=', ';', '>', '[', ':', '<', 'vvv', 'm_', 'namespace', 'elif', 'endif', 'typedef'}
+    capStoppers = {'=', ';', '>', '[', ':', '<', 'vvv', 'm_', 'namespace', 'elif', 'endif', 'typedef', 'static', 'printf', 'fprintf'}
     inFile = ''
     outFile = ''
     inClangFormatOff = False
@@ -210,14 +211,14 @@ def cleanFiles(files, doCRLF, doWrite, doLineUnwrap, doEatWhite, doClangFormat, 
                 shutil.copyfile(file, fileInTmp)
 
             fileOutTmp = file + '.CF'
-            cmd = clangFormatPath + ' ' + clangFormatArgs + ' ' + fileInTmp + ' > ' + fileOutTmp
+            cmd = '"' + clangFormatPath.as_posix() + '" ' + clangFormatArgs + ' ' + fileInTmp + ' > ' + fileOutTmp
             os.system(cmd)
 
             if fileInTmp != file:
                 os.remove(fileInTmp)
 
             if not os.path.exists(fileOutTmp):
-                red(' Failed to create temp output file:', fileOutTmp)
+                red(' Failed to create temp output file:' + fileOutTmp)
             else:
                 if filecmp.cmp(file, fileOutTmp):
                     green(' Clang-format matched.')
@@ -315,7 +316,7 @@ def main():
 
     args = parser.parse_args()
 
-    setCFPath(args.clang_format_path, args.verbose)
+    setClangFormatPath(args.clang_format_path, args.verbose)
     print('Using:', clangFormatPath, '\n')
 
     cleanDirs(args.fname, args.to_crlf, not args.no_write, args.do_line_unwrap, args.do_eatwhite, args.do_clang_format, args.parallel, args.verbose)

@@ -1,3 +1,5 @@
+# DMcTools .clang-tidy style description
+
 # This file currently only contains notes about what we WANT our code to look like. We are not currently applying any rules. Someone should experiment with clang-tidy.
 
 # Capitalization rules (These case names come fome from clang-tidy):
