@@ -89,7 +89,7 @@ def process_uucu_file(file_path):
             print(row['Description'])
 
             for chop in ['Withdrawal by', 'Deposit by', 'Withdrawal', 'Deposit', 'BUSINESS DEBIT', 'Visa Debit', 'Bill Payment']:
-                if row['Description'] != 'Withdrawal' and row['Description'] != 'Deposit':
+                if row['Description'] != 'Withdrawal' and row['Description'] != 'Deposit' and 'Withdrawal at ATM' not in row['Description']:
                     row['Description'] = row['Description'].replace(chop, '')
 
             print(row['Description'])
