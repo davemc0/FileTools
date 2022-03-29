@@ -39,9 +39,7 @@ import hashlib
 import getopt
 import filecmp
 
-
 USAGE = "Usage: %s [-h] [-d] [-m<crc|md5>] <dir>*\n-d actually does the delete."
-
 
 class crc:
     """
@@ -61,7 +59,6 @@ class crc:
         # Er...
         return self.crc
 
-
 def all_files(*tops):
     """Lists all files in the given directories."""
     for top in tops:
@@ -72,12 +69,10 @@ def all_files(*tops):
                     # get_image_name(path)
                     yield path
 
-
 def digest(file, method=hashlib.md5):
     with open(file, 'rb') as f:
         h = method(f.read()).digest()
     return h
-
 
 def true_duplicates(files):
     """
@@ -98,7 +93,6 @@ def true_duplicates(files):
             yield this_set
         files = next_set
 
-
 def group_by(groups, grouper, min_size=1):
     """Breaks each of the groups into smaller subgroups."""
     for group in groups:
@@ -112,7 +106,6 @@ def group_by(groups, grouper, min_size=1):
             if len(g) >= min_size:
                 yield g
 
-
 def usage(message=None):
     global USAGE
     exit_code = 0
@@ -122,7 +115,6 @@ def usage(message=None):
     name = os.path.basename(sys.argv[0])
     print(USAGE % (name,))
     sys.exit(exit_code)
-
 
 def main():
     do_delete = False
@@ -164,7 +156,6 @@ def main():
                 tokill = int(input('Delete which? (0=Org, etc.) >'))
                 os.remove(files[tokill])
                 print("Deleted", files[tokill])
-
 
 if __name__ == "__main__":
     main()

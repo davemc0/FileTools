@@ -21,7 +21,6 @@ level874= ['grbB', 'bobr', 'rlpo', 'PBgp', 'lgbl', 'BGpl', 'oGBg', 'Popr', 'PGGP
 # P purple
 # G dark green
 
-
 def getParams():
     global vials
 

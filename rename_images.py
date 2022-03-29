@@ -1,6 +1,10 @@
-#!/usr/bin/env python
+#!python
 
-# Rename all image files consistently, based on metadata stored in the image file
+# Rename all image and video files consistently
+# Clean up capitalization and punctuation of textual filenames, if any
+# Number similar-named files sequentially
+# Use date and time of image stored in metadata, if any
+# Use file modification date as name if no other info
 
 import sys
 import os
@@ -70,11 +74,15 @@ def printAllTags(tags):
             except (TypeError, UnicodeEncodeError) as err:
                 print('Tag print error:', err, type(tags[tag]))
 
-
 def getImageDate(pathName, tags):
     dateStr = ''
     if 'Image DateTime' in tags:
         dateStr = tags['Image DateTime'].printable
+        if '-' in dateStr:
+            print('Nonstandard date format in image:', dateStr)
+            ts = time.strptime(tags['Image DateTime'].printable,"%Y-%m-%dT%H:%M:%S%z")
+            dateStr = '%04d%02d%02d_%02d%02d%02d' % (ts.tm_year, ts.tm_mon, ts.tm_mday, ts.tm_hour, ts.tm_min, ts.tm_sec)
+            print('Remapping to:', dateStr)
 
     if 'EXIF DateTimeOriginal' in tags:
         ndate = tags['EXIF DateTimeOriginal'].printable
@@ -232,6 +240,8 @@ def renameImages(dirs, reallyRename):
     files = allFiles(dirs)
     for file in files:
         print('Old name:', file)
+        sys.stdout.flush()
+        sys.stderr.flush()
 
         if file.endswith('.JPG') or file.endswith('.jpg') or file.endswith('.JPEG') or file.endswith('.jpeg') or file.endswith('.jpg3'):
             tryRename(file, '.jpg', reallyRename)
@@ -241,6 +251,8 @@ def renameImages(dirs, reallyRename):
             tryRename(file, '.png', reallyRename)
         elif file.endswith('.GIF') or file.endswith('.gif'):
             tryRename(file, '.gif', reallyRename)
+        elif file.endswith('.WEBP') or file.endswith('.webp'):
+            tryRename(file, '.webp', reallyRename)
         elif file.endswith('.AVI') or file.endswith('.avi'):
             tryRename(file, '.avi', reallyRename)
         elif file.endswith('.M4A') or file.endswith('.m4a'):
@@ -271,7 +283,6 @@ def main():
         renameImages(paths, reallyRename)
     except getopt.GetoptError as err:
         print(err)
-
 
 if __name__ == '__main__':
     main()
