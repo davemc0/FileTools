@@ -24,7 +24,7 @@ import pathlib
 clangFilterExts = {'.c', '.cpp', '.cl', '.cu', '.h', '.hpp', '.cuh'}
 clangFilterCPPExts = {'.cl', '.cu', '.cuh'} # Extensions that we rename to .cpp before running clang-format
 eatWhiteExts = clangFilterExts | {'.txt', '.cfg', '.md', '.py', '.bat', '.sh', '.y', '.l', '.py', '.pl', '.csh'}
-skipFolders = {'__pycache__', 'assets', 'build', 'deps', 'output', 'input', '.git', 'DMcTools_vc120', 'DMcTools_vc141', 'DMcTools_vc142', 'GenArt_vc142', 'GenArt_vc120', 'default'}
+skipFolders = {'__pycache__', 'assets', 'doc', 'build', 'deps', 'output', 'input', '.git', 'DMcTools_vc120', 'DMcTools_vc141', 'DMcTools_vc142', 'GenArt_vc142', 'GenArt_vc120', 'default'}
 
 clangFormatArgs = ''
 clangFormatPath = pathlib.Path('clang-format.exe')
