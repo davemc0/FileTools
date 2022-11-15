@@ -39,6 +39,9 @@ def green(text, **kwargs):
 def yellow(text, **kwargs):
     print('\033[33m', text, '\033[0m', sep='', **kwargs)
 
+def get_win_path(posix_path):
+    return posix_path.replace('/c/', 'C:\\')
+
 def tryClangFormatPath(tryPath, verbose):
     global clangFormatPath
 
@@ -68,6 +71,12 @@ def setClangFormatPath(firstTry, verbose):
 
     if tryClangFormatPath('./clang-format.exe', verbose):
         return
+
+    pth = os.popen('which clang-format').read()
+    pth = get_win_path(pth[:-1] + '.exe')
+    if tryClangFormatPath(pth, verbose):
+        return
+
     if tryClangFormatPath('C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/VC/Tools/Llvm/x64/bin/clang-format.exe', verbose):
         return
     if tryClangFormatPath('C:/Program Files/LLVM/bin/clang-format.exe', verbose):
