@@ -21,7 +21,7 @@ def green(text, **kwargs):
 def yellow(text, **kwargs):
     print('\033[33m', text, '\033[0m', sep='', **kwargs)
 
-def replaceLoop(content, oldt, newt, verbose, printNL):
+def replaceLoop(content, oldt, newt, verbose = False, printNL = None):
     replCnt = content.count(oldt)
     while replCnt > 0:
         if verbose:

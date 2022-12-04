@@ -39,7 +39,10 @@ def green(text, **kwargs):
 def yellow(text, **kwargs):
     print('\033[33m', text, '\033[0m', sep='', **kwargs)
 
-def get_win_path(posix_path):
+def removeNonAscii(string):
+    return string.encode('ascii', errors='ignore').decode()
+
+def getWinPath(posix_path):
     return posix_path.replace('/c/', 'C:\\')
 
 def tryClangFormatPath(tryPath, verbose):
@@ -73,7 +76,7 @@ def setClangFormatPath(firstTry, verbose):
         return
 
     pth = os.popen('which clang-format').read()
-    pth = get_win_path(pth[:-1] + '.exe')
+    pth = getWinPath(pth[:-1] + '.exe')
     if tryClangFormatPath(pth, verbose):
         return
 
@@ -84,25 +87,6 @@ def setClangFormatPath(firstTry, verbose):
 
     red("Can't find clang-format.exe.")
     exit(1)
-
-# Returns a list.
-def allFiles(dirs):
-    '''Lists all files in the given directories'''
-    paths = []
-
-    for dirPath in dirs:
-        if os.path.isfile(dirPath):
-            paths.append(dirPath)
-        else:
-            for root, dirs, filenames in os.walk(dirPath, topdown=True):
-                dirs[:] = [d for d in dirs if d not in skipFolders]
-
-                for f in filenames:
-                    path = os.path.join(root, f)
-                    if os.path.isfile(path):
-                        paths.append(path)
-
-    return paths
 
 def lineUnwrap(file, doWrite):
     '''Unwrap lines of C-like code to be semantically equivalent but as few lines as possible'''
@@ -198,72 +182,100 @@ def commentFix(file, doWrite):
         with open(file, 'w') as outF:
             outF.write(outFile)
 
-def cleanFiles(files, doCRLF, doWrite, doLineUnwrap, doEatWhite, doClangFormat, clangFormatArgs, clangFormatPath, verbose):
-    for file in files:
-        print(file, end='    ')
+def cleanFile(file, doCRLF, doWrite, doLineUnwrap, doEatWhite, doClangFormat, clangFormatArgs, clangFormatPath, verbose):
+    print(file, end='    ')
 
-        filename, fileext = os.path.splitext(file)
+    filename, fileext = os.path.splitext(file)
 
-        if fileext in clangFilterExts:
-            commentFix(file, doWrite)
+    if fileext in clangFilterExts:
+        commentFix(file, doWrite)
 
-        if fileext in clangFilterExts and doLineUnwrap:
-            lineUnwrap(file, doWrite)
+    if fileext in clangFilterExts and doLineUnwrap:
+        lineUnwrap(file, doWrite)
 
-        if fileext in eatWhiteExts and doEatWhite:
-            eatwhite.fixFileWhitespace(file, doCRLF, doWrite, False, 0, 0, verbose, '  ')
+    if fileext in eatWhiteExts and doEatWhite:
+        eatwhite.fixFileWhitespace(file, doCRLF, doWrite, False, 0, 0, verbose, '  ')
 
-        if fileext in clangFilterExts and doClangFormat:
-            fileInTmp = file
-            if fileext in clangFilterCPPExts:
-                fileInTmp = file + '_CF.cpp'
-                shutil.copyfile(file, fileInTmp)
+    if fileext in clangFilterExts and doClangFormat:
+        fileInTmp = file
+        if fileext in clangFilterCPPExts:
+            fileInTmp = file + '_CF.cpp'
+            shutil.copyfile(file, fileInTmp)
 
-            fileOutTmp = file + '.CF'
-            cmd = '"' + clangFormatPath.as_posix() + '" ' + clangFormatArgs + ' ' + fileInTmp + ' > ' + fileOutTmp
-            os.system(cmd)
+        fileOutTmp = file + '.CF'
+        cmd = '"' + clangFormatPath.as_posix() + '" ' + clangFormatArgs + ' ' + fileInTmp + ' > ' + fileOutTmp
+        os.system(cmd)
 
-            if fileInTmp != file:
-                os.remove(fileInTmp)
+        if fileInTmp != file:
+            os.remove(fileInTmp)
 
-            if not os.path.exists(fileOutTmp):
-                red(' Failed to create temp output file:' + fileOutTmp)
-            else:
-                if filecmp.cmp(file, fileOutTmp):
-                    green(' Clang-format matched.')
-                elif os.path.getsize(fileOutTmp) > 0:
-                    if doWrite:
-                        #os.remove(file)
-                        shutil.copyfile(fileOutTmp, file)
-                        yellow(' Clang-format saved.')
-                    else:
-                        red(' Clang-format changes not saved.')
-                elif os.path.getsize(file) > 0:
-                    red(' Temp output file should not be empty!!!\nCommand:' + cmd)
-                else:
-                    red(' Input and temp files empty')
-
-            os.remove(fileOutTmp)
-        elif fileext not in eatWhiteExts:
-            green('Skipping: ' + file)
+        if not os.path.exists(fileOutTmp):
+            red(' Failed to create temp output file:' + fileOutTmp)
         else:
-            print('')
+            if filecmp.cmp(file, fileOutTmp):
+                green(' Clang-format matched.')
+            elif os.path.getsize(fileOutTmp) > 0:
+                if doWrite:
+                    #os.remove(file)
+                    shutil.copyfile(fileOutTmp, file)
+                    yellow(' Clang-format saved.')
+                else:
+                    red(' Clang-format changes not saved.')
+            elif os.path.getsize(file) > 0:
+                red(' Temp output file should not be empty!!!\nCommand:' + cmd)
+            else:
+                red(' Input and temp files empty')
 
-def cleanDirs(dirs, doCRLF, doWrite, doLineUnwrap, doEatWhite, doClangFormat, doParallel, verbose):
-    files = allFiles(dirs)
+        os.remove(fileOutTmp)
+    elif fileext not in eatWhiteExts:
+        green('Skipping: ' + file)
+    else:
+        print('')
+
+def allFiles(dirs, allow_suffix = ''):
+    '''Generates all files in the given directories and if allow_suffix is provided, filters it'''
+
+    for dirPath in dirs:
+        if os.path.isfile(dirPath) and (allow_suffix in dirPath or not allow_suffix):
+            dirPath = removeNonAscii(dirPath)
+            yield dirPath
+        else:
+            for root, dirs, filenames in os.walk(dirPath, topdown=True):
+                dirs[:] = [d for d in dirs if d not in skipFolders]
+
+                for f in filenames:
+                    path = os.path.join(root, f)
+                    path = removeNonAscii(path)
+                    if os.path.isfile(path) and (allow_suffix in path or not allow_suffix):
+                        yield path
+
+def processFileList(file_chunk, func, args):
+    '''Helper function for processFilesParallel that takes a list of files and calls func on them serially'''
+
+    for f in file_chunk:
+        func(f, *args)
+
+def processFilesParallel(dirs, allow_suffix, func, args, doParallel):
+    '''Run func with args on all files in all dirs that contain allow_suffix in their name'''
+    '''func must take filename as first arg.'''
+
+    all_files = allFiles(dirs, allow_suffix)
 
     if doParallel:
+        # Put generated files in list for hashing
+        files = list(all_files)
+
         # Reorder the list of files arbitrarily to decorrelate the easy ones so thread workload is more uniform
         files = [y for x,y in sorted(zip([hashlib.md5(f.encode('utf-8')).hexdigest() for f in files], files))]
 
         # Parallel implementation
-        filesPerChunk = math.ceil(len(files) / multiprocessing.cpu_count())
-        fileChunks = [files[i * filesPerChunk:(i + 1) * filesPerChunk] for i in range((len(files) + filesPerChunk - 1) // filesPerChunk )]
+        core_count = multiprocessing.cpu_count()
+        files_per_chunk = int((len(files) + core_count - 1) / core_count)
+        file_chunks = [files[i * files_per_chunk:(i + 1) * files_per_chunk] for i in range(core_count)]
 
         processes = []
-        for cur_test in fileChunks:
-            p = multiprocessing.Process(target=cleanFiles, args=(cur_test, doCRLF, doWrite, doLineUnwrap, doEatWhite,
-                doClangFormat, clangFormatArgs, clangFormatPath, verbose))
+        for file_chunk in file_chunks:
+            p = multiprocessing.Process(target=processFileList, args=(file_chunk, func, args))
             processes.append(p)
             p.start()
 
@@ -271,7 +283,7 @@ def cleanDirs(dirs, doCRLF, doWrite, doLineUnwrap, doEatWhite, doClangFormat, do
             process.join()
 
     else:
-        cleanFiles(files, doCRLF, doWrite, doLineUnwrap, doEatWhite, doClangFormat, clangFormatArgs, clangFormatPath, verbose)
+        processFileList(all_files, func, args)
 
 def main():
     parser = argparse.ArgumentParser(
@@ -328,7 +340,7 @@ def main():
     setClangFormatPath(args.clang_format_path, args.verbose)
     print('Using:', clangFormatPath, '\n')
 
-    cleanDirs(args.fname, args.to_crlf, not args.no_write, args.do_line_unwrap, args.do_eatwhite, args.do_clang_format, args.parallel, args.verbose)
+    processFilesParallel(args.fname, '', cleanFile, (args.to_crlf, not args.no_write, args.do_line_unwrap, args.do_eatwhite, args.do_clang_format, clangFormatArgs, clangFormatPath, args.verbose), args.parallel)
 
 if __name__ == "__main__":
     startTime = timeit.default_timer()
