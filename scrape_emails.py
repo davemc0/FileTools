@@ -207,6 +207,20 @@ def doUniqueTLDs():
                 line = '.'.join(line.split('.')[:-1])
             print(line)
 
+def makePersonNames():
+    with open('ParticleMailingList.txt') as f:
+        for line in f:
+            line = line.strip()
+            first = ''
+            last = ''
+            if '.' in line.split('@')[0] and len(line.split('@')[0].split('.')) >= 2:
+                first = line.split('@')[0].split('.')[0]
+                last = line.split('@')[0].split('.')[1]
+                first = re.sub('[^a-zA-Z]+', '', first)
+                last = re.sub('[^a-zA-Z]+', '', last)
+            print(line.lower(), first.title(), last.title(), sep=',')
+
 if __name__ == '__main__':
-    doUniqueTLDs()
+    # doUniqueTLDs()
     #  dopdf()
+    makePersonNames()
