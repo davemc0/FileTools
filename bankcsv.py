@@ -30,7 +30,7 @@ def categorize(row):
     if 'ADVANCED MICRO D' in desc:
         row['Category'] = 'Business Travel'
         row['Detail'] = 'reim'
-    if 'AMERICAN EXPRESS TYPE: ONLINE PMT' in desc:
+    if 'AMERICAN EXPRESS TYPE: ONLINE PMT' in desc or 'AUTOPAY PAYMENT' in desc:
         row['Category'] = '$ Pay AmEx'
     if 'TARGET.COM' in desc or 'TJ MAXX' in desc:
         row['Category'] = 'Housewares'
