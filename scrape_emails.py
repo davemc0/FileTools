@@ -207,20 +207,106 @@ def doUniqueTLDs():
                 line = '.'.join(line.split('.')[:-1])
             print(line)
 
+def cleanEmail(inemail):
+    email = inemail.strip()
+    email = email.lower()
+    emailname = email.split('@')[0]
+    emailname = emailname.split('+')[0]
+    email = emailname + '@' + email.split('@')[1]
+
+    #if email != inemail:
+    #    print('CH:', inemail, email)
+
+    return email
+
+def makePersonNameFromEmail(email):
+    emailname = email.split('@')[0]
+
+    first = ''
+    last = ''
+
+    for br in {'.', '_', '-'}:
+        if br in emailname and len(emailname.split(br)) >= 2:
+            first = emailname.split(br)[0]
+            last = emailname.split(br)[-1]
+
+            # Remove nonalphabetics
+            first = re.sub('[^a-zA-Z]+', '', first)
+            last = re.sub('[^a-zA-Z]+', '', last)
+
+    return (first.title(), last.title())
+
 def makePersonNames():
     with open('ParticleMailingList.txt') as f:
         for line in f:
             line = line.strip()
-            first = ''
-            last = ''
-            if '.' in line.split('@')[0] and len(line.split('@')[0].split('.')) >= 2:
-                first = line.split('@')[0].split('.')[0]
-                last = line.split('@')[0].split('.')[1]
-                first = re.sub('[^a-zA-Z]+', '', first)
-                last = re.sub('[^a-zA-Z]+', '', last)
-            print(line.lower(), first.title(), last.title(), sep=',')
+            cleanEmail(line)
+            #(first, last) = makePersonNameFromEmail(line)
+            #print(line.lower(), first, last, sep=',')
+
+def mergeInfo(a, b):
+    c = [a[0], a[1], a[2]]
+    if len(b[1]) > len(c[1]):
+        c[1] = b[1]
+    if len(b[2]) > len(c[2]):
+        c[2] = b[2]
+
+    if c[0] == 'o':
+        c[0] = b[0]
+    if c[0] == 'k':
+        c[0] = b[0]
+    if b[0] == 'm':
+        c[0] = b[0]
+
+    return (c[0], c[1], c[2])
+
+def combineList():
+    peeps = dict()
+
+    with open('FullList.csv') as f:
+        for line in f:
+            line = line.strip()
+            #print(line)
+            linesp = line.split(',')
+            src = linesp[0]
+            email = linesp[1]
+            if not '@' in email:
+                print('ERROR:', email)
+            first = linesp[2] if len(linesp) > 2 else ''
+            last = linesp[3] if len(linesp) > 3 else ''
+
+            email = cleanEmail(email)
+            tup = (src, first, last)
+
+            # Intgegrate new contact into peeps
+            if email in peeps:
+                mrg = mergeInfo(peeps[email], tup)
+                # print('DUP:', email, peeps[email], tup, '=>', mrg)
+                peeps[email] = mrg
+            else:
+                peeps[email] = tup
+
+    # Dump combined list
+    # exit()
+    for email in sorted(peeps):
+        # Generate missing names
+        (f, l) = makePersonNameFromEmail(email)
+        tup = peeps[email]
+
+        if tup[1] == '':
+            tup = (tup[0], f, tup[2])
+        if tup[2] == '':
+            tup = (tup[0], tup[1], l)
+
+        # Capitalize names
+        tup = (tup[0], tup[1].title(), tup[2].title())
+        peeps[email] = tup
+
+        #if tup[0] not in {'o', 'k', 'm'}:
+        print(tup[0], email, tup[1], tup[2], sep=',')
 
 if __name__ == '__main__':
     # doUniqueTLDs()
     #  dopdf()
-    makePersonNames()
+    # makePersonNames()
+    combineList()
