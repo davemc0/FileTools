@@ -12,6 +12,7 @@ import getopt
 import exifread
 import time
 import re
+import random
 from iptcinfo3 import IPTCInfo
 # Sometime I should switch to py3exiv2 but I couldn't get it to compile.
 
@@ -202,6 +203,7 @@ def tryRename(pathName, suffix, reallyRename):
 
     dirName = os.path.dirname(pathName)
     baseName = getImageName(pathName, False)
+    # baseName = str(random.randrange(100000,1000000)) # Give them random file names
 
     target = os.path.join(dirName, baseName + suffix)
     serial = 1
