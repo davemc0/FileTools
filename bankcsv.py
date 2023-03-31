@@ -219,6 +219,7 @@ def process_ufirstcu_file(file_path):
             desc = desc.replace('THE HOME DEPOT', 'HOME DEPOT')
             desc = desc.replace('The Home Depot', 'HOME DEPOT')
             desc = desc.replace('MEMO:', ' MEMO:')
+            desc = desc.replace('CO: Urban FT', '')
             desc = removePrefixes(desc)
 
             if 'in the amount' in desc:
