@@ -6,68 +6,127 @@ import csv
 import argparse
 import os
 
+# Positive amounts are income. Negative amounts are outflows.
+
 fieldnames = ['Account', 'Date', 'Description', 'cat', 'det', 'Amount']
 
 substitutions = [
+# {'str': 'ADVANCED MICRO D', 'cat': 'Business Travel', 'det': 'reim'},
+# {'str': 'AMD INC.', 'cat': 'Salary'},
 {'str': "MACEY'S EXPRESS HLD", 'cat': 'Automobile'},
 {'str': "MACEY'S HOLL", 'cat': 'Groceries'},
+{'str': 'SPROUTS', 'cat': 'Groceries'},
 {'str': "MCDONALD'S", 'cat': 'Dining'},
 {'str': "SCHWAN'S HOME SERVIC", 'cat': 'Groceries', 'det': 'Schwans'},
+{'str': 'ASPEN RIDGE MAN', 'cat': 'Education', 'det': 'Jonathan Rent'},
 {'str': "WENDY'S", 'cat': 'Dining'},
+{'str': '7-ELEVEN', 'cat': 'Automobile', 'min': -25},
+{'str': '7-ELEVEN', 'cat': 'Dining', 'max': -25},
+{'str': 'MAVERIK', 'cat': 'Automobile', 'min': -25},
+{'str': 'MAVERIK', 'cat': 'Dining', 'max': -25},
 {'str': 'ACE HARDWARE', 'cat': 'Repairs'},
-{'str': 'ADVANCED MICRO D', 'cat': 'Business Travel', 'det': 'reim'},
-{'str': 'AMAZON MARKEPLACE', 'cat': 'Housewares', 'det': 'Amazon', 'lmt': -250.0},
-{'str': 'AMAZON.COM', 'cat': 'Housewares', 'det': 'Amazon', 'lmt': -250.0},
-{'str': 'AMAZON.COM*', 'cat': 'Housewares', 'det': 'Amazon', 'lmt': -250.0},
-{'str': 'AMD INC.', 'cat': 'Salary'},
+{'str': 'ACTIVESKIN', 'cat': 'Medical'},
+{'str': 'AFGHAN KITCHEN', 'cat': 'Dining'},
+{'str': 'MY PIE P', 'cat': 'Dining'},
+{'str': 'AMAZON MARKEPLACE', 'cat': 'Housewares', 'det': 'Amazon', 'max': -250.0},
+{'str': 'AMAZON.COM', 'cat': 'Housewares', 'det': 'Amazon', 'max': -250.0},
+{'str': 'AMAZON.COM*', 'cat': 'Housewares', 'det': 'Amazon', 'max': -250.0},
 {'str': 'AMERICAN EXPRESS TYPE: ONLINE PMT', 'cat': '$ Pay AmEx'},
+{'str': 'AMEX EPAYMENT TYPE: ONLINE PMT', 'cat': '$ Pay AmEx'},
 {'str': 'APPLE.COM', 'cat': 'Entertainment'},
+{'str': 'AUTO PARTS', 'cat': 'Automobile'},
+{'str': 'AMEX RIDESHARE CREDIT', 'cat': 'Automobile'},
 {'str': 'AUTOPAY PAYMENT', 'cat': '$ Pay AmEx'},
 {'str': 'BALANCEDBODY', 'cat': 'Medical'},
+{'str': 'UTAHTAXRFD', 'cat': 'Taxes'},
 {'str': 'BYU', 'cat': 'Education'},
+{'str': 'CAFE RIO', 'cat': 'Dining'},
+{'str': 'HONEST E', 'cat': 'Dining'},
+{'str': 'COSTA V', 'cat': 'Dining'},
+{'str': 'ARCTIC CIRCLE', 'cat': 'Dining'},
 {'str': 'CAROLLYNN', 'cat': 'Education', 'det': 'Piano'},
+{'str': 'CARRINGTON', 'cat': 'Mortgage'},
 {'str': 'CHEVRON', 'cat': 'Automobile'},
+{'str': "O'REILLY AUTO PARTS", 'cat': 'Automobile'},
 {'str': 'CHUCKS SERVICE', 'cat': 'Automobile'},
+{'str': 'COSTA VIDA', 'cat': 'Dining'},
 {'str': 'COSTCO BY INSTACART', 'cat': 'Groceries'},
-{'str': 'COSTCO WHSE', 'cat': 'Groceries', 'lmt': -250.0},
+{'str': 'COSTCO WHSE', 'cat': 'Groceries', 'max': -250.0},
 {'str': 'COTTONWOOD ID', 'cat': 'Utilities', 'det': 'Sewer'},
+{'str': 'DAIRY QUEEN', 'cat': 'Dining'},
+{'str': 'DOLLAR TREE', 'cat': 'Housewares'},
+{'str': 'ENBRIDGE', 'cat': 'Utilities', 'det': 'Gas'},
 {'str': 'DOORDASH', 'cat': 'Dining'},
+{'str': 'DOWNEAST', 'cat': 'Housewares'},
 {'str': 'DTV*DIRECTV SERVICE', 'cat': 'Utilities', 'det': 'DirecTV'},
 {'str': 'ELECTRONIC PAYMENT RECEIVED', 'cat': '$ Pay AmEx'},
+{'str': 'EXXONMOBIL', 'cat': 'Automobile'},
+{'str': 'HERTZ CAR RENTAL', 'cat': 'Business Travel'},
 {'str': 'FANDANGO', 'cat': 'Entertainment'},
 {'str': 'From DLT', 'cat': 'Capital Xfer'},
 {'str': 'From MCALLISTER', 'cat': 'Capital Xfer'},
+{'str': 'IRS T', 'cat': 'Taxes'},
+{'str': 'GEICO AUTO', 'cat': 'Automobile'},
 {'str': 'GOOGLE *FIBER', 'cat': 'Utilities', 'det': 'Internet'},
+{'str': 'HOLLIDAY WATER CO', 'cat': 'Utilities', 'det': 'Water'},
 {'str': 'GOOGLE*FIBER', 'cat': 'Utilities', 'det': 'Internet'},
+{'str': "STUDIOL", 'cat': 'Personal Care'},
+{'str': "CLAIRE'S BTQ", 'cat': 'Personal Care'},
+{'str': 'GREAT CLIPS', 'cat': 'Personal Care'},
+{'str': 'GREAT HARVEST', 'cat': 'Groceries'},
+{'str': 'HALE CENTRE', 'cat': 'Entertainment'},
 {'str': 'HARMONS', 'cat': 'Groceries'},
 {'str': 'HOLIDAY OIL', 'cat': 'Automobile'},
+{'str': 'IHOP', 'cat': 'Dining'},
+{'str': 'INTERMOUNTAIN HEALTH', 'cat': 'Medical'},
 {'str': 'JIFFY LUBE', 'cat': 'Automobile'},
+{'str': 'JOANNE', 'cat': 'Housewares'},
 {'str': 'JUST.INGREDIENTS', 'cat': 'Housewares'},
+{'str': 'KFC', 'cat': 'Dining'},
+{'str': 'KINDLE SVCS', 'cat': 'Entertainment'},
+{'str': 'KOHLS', 'cat': 'Housewares'},
+{'str': 'LABCORP', 'cat': 'Medical'},
 {'str': 'LEDINGHAM PROPER', 'cat': 'Rental Income'},
+{'str': 'LES SCHWAB', 'cat': 'Automobile'},
+{'str': 'LILLIAN FARRIS', 'cat': 'Medical', 'det': 'Hazel'},
 {'str': 'LITTLE CAESAR', 'cat': 'Dining'},
+{'str': 'TOP IT FROZEN', 'cat': 'Dining'},
+{'str': 'SUBWAY', 'cat': 'Dining'},
 {'str': 'LOANCARE', 'cat': 'Mortgage'},
 {'str': 'LUME DEODORANT', 'cat': 'Housewares'},
+{'str': 'JOANN STORES', 'cat': 'Housewares'},
+{'str': 'MARSHALLS', 'cat': 'Housewares'},
 {'str': 'MEIERS PHARMACY', 'cat': 'Medical'},
 {'str': 'MILLCREEK GARDENS', 'cat': 'Yard'},
 {'str': 'MORTGAGE', 'cat': 'Mortgage'},
+{'str': 'MT OLYMPUS IMPROVE', 'cat': 'Utilities', 'det': 'Sewer'},
+{'str': 'NAYAX WASH', 'cat': 'Automobile'},
+{'str': 'PARKING', 'cat': 'Automobile'},
 {'str': 'NETFLIX', 'cat': 'Entertainment'},
 {'str': 'ODP Fee', 'cat': 'Bank Fees'},
 {'str': 'OHSWEBSTOR', 'cat': 'Education'},
+{'str': 'FONS-SARAHJANEWATTS', 'cat': 'Education', 'det': 'Caroline voice'},
+{'str': 'OLYMPUS CLINIC', 'cat': 'Medical'},
 {'str': 'OLYMPUS FAMILY MED', 'cat': 'Medical'},
 {'str': 'PACIFICORP', 'cat': 'Utilities', 'det': 'Power'},
 {'str': 'PEDIATRIC', 'cat': 'Medical'},
 {'str': 'PENN MUTUAL', 'cat': '$ Life Ins', 'det': 'Penn Mutual'},
 {'str': 'PIZZA', 'cat': 'Dining'},
 {'str': 'PIZZERIA', 'cat': 'Dining'},
+{'str': 'PRELOVED', 'cat': 'Housewares'},
+{'str': 'PRIMARY CHILDREN', 'cat': 'Medical'},
 {'str': 'PRIME VIDEO', 'cat': 'Entertainment'},
 {'str': 'QUESTAR GAS', 'cat': 'Utilities', 'det': 'Gas'},
+{'str': 'RANCHERITO', 'cat': 'Dining'},
 {'str': 'RED 8 ASIAN', 'cat': 'Dining'},
 {'str': 'ROSS DRESS FOR LESS', 'cat': 'Housewares'},
+{'str': 'ROSS STORES', 'cat': 'Housewares'},
 {'str': 'SALTLAKECOUNTYLIBRARYS', 'cat': 'Entertainment'},
 {'str': 'SHARONS CAFE', 'cat': 'Dining'},
 {'str': 'SIZZLER', 'cat': 'Dining'},
 {'str': 'SLS', 'cat': 'Mortgage'},
 {'str': 'SMILES', 'cat': 'Medical', 'det': 'Dental'},
+{'str': 'SMITHS FOOD', 'cat': 'Groceries'},
 {'str': 'SMITHS MRKTPL', 'cat': 'Housewares'},
 {'str': 'SNAPFISH', 'cat': 'Housewares'},
 {'str': 'SPECIALIZED LOAN', 'cat': 'Mortgage'},
@@ -76,11 +135,13 @@ substitutions = [
 {'str': 'SUBARU', 'cat': 'Automobile'},
 {'str': 'SUMMIT FINANCIAL', 'cat': 'Legal and Prof Fees', 'det': 'Tax prep'},
 {'str': 'SWEETALY', 'cat': 'Dining'},
+{'str': 'TROPICAL SMOOTHIE CA', 'cat': 'Dining'},
 {'str': 'SWINYER WOSETH', 'cat': 'Medical'},
 {'str': 'SWITCH SALON', 'cat': 'Personal Care'},
+{'str': 'T J MAXX', 'cat': 'Housewares'},
 {'str': 'T-MOBILE', 'cat': 'Utilities', 'det': 'Cell Phone'},
 {'str': 'TAQUERIA', 'cat': 'Dining'},
-{'str': 'TARGET PLUS', 'cat': 'Housewares', 'lmt': -250.0},
+{'str': 'TARGET PLUS', 'cat': 'Housewares', 'max': -250.0},
 {'str': 'TARGET.COM', 'cat': 'Housewares'},
 {'str': 'TICKETMAST', 'cat': 'Entertainment'},
 {'str': 'TJ MAXX', 'cat': 'Housewares'},
@@ -88,12 +149,15 @@ substitutions = [
 {'str': 'Transfer From Loan', 'cat': '$ Loan Xfer'},
 {'str': 'Transfer To Loan 02', 'cat': 'Automobile', 'det': 'Legacy'},
 {'str': 'Transfer To Loan 03', 'cat': 'Automobile', 'det': 'Santa Fe'},
-{'str': 'Transfer To Loan 04', 'cat': 'Automobile', 'det': 'Legacy'},
+{'str': 'Transfer To Loan 05', 'cat': 'Automobile', 'det': 'Impreza'},
 {'str': 'Transfer To Loan 09', 'cat': '$ Loan Xfer'},
 {'str': 'Transfer To Loan 10', 'cat': '$ Loan Xfer'},
 {'str': 'Transfer To MCALLISTER', 'cat': 'Capital Xfer'},
 {'str': 'U OF U MY CHART', 'cat': 'Medical'},
+{'str': 'UNGRICHT PARKER', 'cat': 'Medical'},
+{'str': 'UPTOWN CHEAPSKATE', 'cat': 'Housewares'},
 {'str': 'USPS', 'cat': 'Housewares'},
+{'str': 'UTAH CORPORATIONS', 'cat': 'Legal and Prof Fees'},
 {'str': 'UTAH-DMV', 'cat': 'Automobile'},
 {'str': 'VALLEY WIDE COOP', 'cat': 'Utilities', 'det': 'Propane'},
 {'str': 'VIDANGEL', 'cat': 'Entertainment'},
@@ -106,6 +170,7 @@ substitutions = [
 {'str': 'WENDYS', 'cat': 'Dining'},
 {'str': 'WINKWELL', 'cat': 'Housewares'},
 {'str': 'WYZE LABS', 'cat': 'Legal and Prof Fees'},
+{'str': 'ZEST FOR LIFE', 'cat': 'Medical'},
 {'str': 'ZIONS BANK TYPE: ONLINE PMT', 'cat': 'Zions Interest'},
 ]
 
@@ -116,7 +181,9 @@ def categorize(row):
 
     for item in substitutions:
         if item['str'] in desc:
-            if 'lmt' in item and float(row['Amount']) <= item['lmt']:
+            if 'max' in item and float(row['Amount']) <= item['max']:
+                continue
+            if 'min' in item and float(row['Amount']) >= item['min']:
                 continue
             row['cat'] = item['cat']
             if 'det' in item:
@@ -155,7 +222,7 @@ def removePrefixes(content):
     '''Remove prefixes separated by punctuation from descriptions'''
 
     before = content
-    content = removeOnePrefix(content, '*', ['ACT', 'AMZ', 'BT', 'FS', 'GG', 'ICP', 'INT', 'PAYPAL', 'PTI', 'SP', 'SQ', 'TST', 'WPY'])
+    content = removeOnePrefix(content, '*', ['ACT', 'AMZ', 'BT', 'EB', 'ETT', 'FS', 'GG', 'ICP', 'INT', 'PAYPAL', 'POS', 'PTI', 'PY', 'RAL', 'SP', 'SQ', 'TM', 'TST', 'WPY', 'YSI'])
     content = removeOnePrefix(content, ' ', ['WWW', 'SP'])
     content = removeOnePrefix(content, '.', ['WWW'])
 
@@ -216,6 +283,7 @@ def process_ufirstcu_file(file_path):
                 if desc != 'Withdrawal' and desc != 'Deposit' and 'Withdrawal at ATM' not in desc and 'Mobile Deposit' not in desc:
                     desc = desc.replace(chop, '')
 
+            desc = desc.replace('UFirst RDC', 'UFirst Mobile Check Deposit')
             desc = desc.replace('THE HOME DEPOT', 'HOME DEPOT')
             desc = desc.replace('The Home Depot', 'HOME DEPOT')
             desc = desc.replace('MEMO:', ' MEMO:')
@@ -283,16 +351,20 @@ def process_amex_file(file_path):
         csvreader = csv.DictReader(csvfile)
 
         for row in csvreader:
-            acct = 'DaveAcct' if '-6' in row['Account #'] else 'TiffAcct'
-            row['Account'] = acct + '-' + row['Card Member']
+            if 'Account #' in row:
+                acct = 'DaveDReserve'
+                row['Account'] = acct + '-' + row['Card Member']
+                row.pop('Account #')
+                row.pop('Card Member')
+            else:
+                row['Account'] = 'DaveMarrBevy'
 
             if 'cat' in row:
                 row['det'] = row['cat']
                 row.pop('cat')
             else:
                 row['det'] = ''
-            row.pop('Account #')
-            row.pop('Card Member')
+
             if 'Type' in row:
                 row.pop('Type')
             if 'Reference' in row:
